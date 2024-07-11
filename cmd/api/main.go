@@ -4,6 +4,7 @@ import (
 	"github.com/joojf/travel-planner-api/internal/activity"
 	"github.com/joojf/travel-planner-api/internal/auth"
 	"github.com/joojf/travel-planner-api/internal/database"
+	"github.com/joojf/travel-planner-api/internal/destination"
 	"github.com/joojf/travel-planner-api/internal/invitation"
 	"github.com/joojf/travel-planner-api/internal/middleware"
 	"github.com/joojf/travel-planner-api/internal/trip"
@@ -32,6 +33,8 @@ func main() {
 	activityHandler := activity.NewHandler(activityRepo)
 	invitationRepo := invitation.NewRepository(db)
 	invitationHandler := invitation.NewHandler(invitationRepo)
+	destinationRepo := destination.NewRepository(db)
+	destinationHandler := destination.NewHandler(destinationRepo)
 
 	e.POST("/auth/register", authHandler.Register)
 	e.POST("/auth/login", authHandler.Login)
@@ -57,10 +60,12 @@ func main() {
 	actGroup.PUT("/:activityId", activityHandler.UpdateActivity)
 	actGroup.DELETE("/:activityId", activityHandler.DeleteActivity)
 
-	// Expense routes
-	// expGroup := e.Group("/trips/:tripId/expenses", middleware.AuthMiddleware)
-	// expGroup.POST("", expenseHandler.CreateExpense)
-	// expGroup.GET("", expenseHandler.GetExpenses)
+	// Destination routes
+	destGroup := e.Group("/trips/:tripId/destination", middleware.AuthMiddleware)
+	destGroup.GET("", destinationHandler.GetDestination)
+	destGroup.POST("", destinationHandler.CreateDestination)
+	destGroup.PUT("", destinationHandler.UpdateDestination)
+	destGroup.DELETE("", destinationHandler.DeleteDestination)
 
 	e.Logger.Fatal(e.Start(":8080"))
 }

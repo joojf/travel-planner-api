@@ -1,0 +1,12 @@
+CREATE TABLE destinations (
+    id SERIAL PRIMARY KEY,
+    trip_id INTEGER NOT NULL REFERENCES trips(id) ON DELETE CASCADE,
+    name VARCHAR(255) NOT NULL,
+    country VARCHAR(100) NOT NULL,
+    city VARCHAR(100) NOT NULL,
+    description TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE UNIQUE INDEX idx_trip_destination ON destinations(trip_id);
