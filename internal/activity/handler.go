@@ -16,15 +16,16 @@ func NewHandler(repo RepositoryInterface) *Handler {
 }
 
 func (h *Handler) CreateActivity(c echo.Context) error {
+	tripID, err := strconv.ParseInt(c.Param("tripId"), 10, 64)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "Invalid trip ID")
+	}
+
 	var activity Activity
 	if err := c.Bind(&activity); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
-	tripID, err := strconv.ParseInt(c.Param("tripId"), 10, 64)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, "Invalid trip ID")
-	}
 	activity.TripID = tripID
 
 	if err := h.repo.Create(&activity); err != nil {
@@ -34,18 +35,18 @@ func (h *Handler) CreateActivity(c echo.Context) error {
 	return c.JSON(http.StatusCreated, activity)
 }
 
-func (h *Handler) GetActivity(c echo.Context) error {
-	id, err := strconv.ParseInt(c.Param("activityId"), 10, 64)
+func (h *Handler) GetActivities(c echo.Context) error {
+	tripID, err := strconv.ParseInt(c.Param("tripId"), 10, 64)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, "Invalid activity ID")
+		return echo.NewHTTPError(http.StatusBadRequest, "Invalid trip ID")
 	}
 
-	activity, err := h.repo.GetByID(id)
+	activities, err := h.repo.GetByTripID(tripID)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusNotFound, "Activity not found")
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
-	return c.JSON(http.StatusOK, activity)
+	return c.JSON(http.StatusOK, activities)
 }
 
 func (h *Handler) UpdateActivity(c echo.Context) error {
@@ -54,14 +55,14 @@ func (h *Handler) UpdateActivity(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid activity ID")
 	}
 
-	var updatedActivity Activity
-	if err := c.Bind(&updatedActivity); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
-	}
-
 	existingActivity, err := h.repo.GetByID(id)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, "Activity not found")
+	}
+
+	var updatedActivity Activity
+	if err := c.Bind(&updatedActivity); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
 	existingActivity.Name = updatedActivity.Name
