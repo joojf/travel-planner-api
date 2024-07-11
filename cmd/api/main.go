@@ -4,6 +4,7 @@ import (
 	"github.com/joojf/travel-planner-api/internal/activity"
 	"github.com/joojf/travel-planner-api/internal/auth"
 	"github.com/joojf/travel-planner-api/internal/database"
+	"github.com/joojf/travel-planner-api/internal/invitation"
 	"github.com/joojf/travel-planner-api/internal/middleware"
 	"github.com/joojf/travel-planner-api/internal/trip"
 	"github.com/joojf/travel-planner-api/internal/validator"
@@ -29,6 +30,8 @@ func main() {
 	tripHandler := trip.NewHandler(tripRepo)
 	activityRepo := activity.NewRepository(db)
 	activityHandler := activity.NewHandler(activityRepo)
+	invitationRepo := invitation.NewRepository(db)
+	invitationHandler := invitation.NewHandler(invitationRepo)
 
 	e.POST("/auth/register", authHandler.Register)
 	e.POST("/auth/login", authHandler.Login)
@@ -45,11 +48,12 @@ func main() {
 	invGroup := e.Group("/trips/:tripId/invitations", middleware.AuthMiddleware)
 	invGroup.POST("", invitationHandler.CreateInvitation)
 	invGroup.GET("", invitationHandler.GetInvitations)
+	invGroup.DELETE("/:invitationId", invitationHandler.DeleteInvitation)
 
 	// Activity routes
 	actGroup := e.Group("/trips/:tripId/activities", middleware.AuthMiddleware)
 	actGroup.POST("", activityHandler.CreateActivity)
-	actGroup.GET("/:activityId", activityHandler.GetActivity)
+	actGroup.GET("", activityHandler.GetActivities)
 	actGroup.PUT("/:activityId", activityHandler.UpdateActivity)
 	actGroup.DELETE("/:activityId", activityHandler.DeleteActivity)
 
