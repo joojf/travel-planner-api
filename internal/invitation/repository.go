@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"fmt"
 	"time"
+
+	"github.com/joojf/travel-planner-api/internal/trip"
 )
 
 type Repository struct {
@@ -18,6 +20,7 @@ type RepositoryInterface interface {
 	Create(invitation *Invitation) error
 	GetByTripID(tripID int64) ([]*Invitation, error)
 	Delete(id int64) error
+	GetTripByID(tripID int64) (*trip.Trip, error)
 }
 
 var _ RepositoryInterface = (*Repository)(nil)
@@ -85,4 +88,23 @@ func (r *Repository) Delete(id int64) error {
 	}
 
 	return nil
+}
+
+func (r *Repository) GetTripByID(tripID int64) (*trip.Trip, error) {
+	query := `
+        SELECT id, name
+        FROM trips
+        WHERE id = $1
+    `
+
+	var trip trip.Trip
+	err := r.db.QueryRow(query, tripID).Scan(&trip.ID, &trip.Name)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, fmt.Errorf("trip not found")
+		}
+		return nil, fmt.Errorf("failed to get trip: %w", err)
+	}
+
+	return &trip, nil
 }

@@ -8,6 +8,7 @@ import (
 	"github.com/joojf/travel-planner-api/internal/invitation"
 	"github.com/joojf/travel-planner-api/internal/link"
 	"github.com/joojf/travel-planner-api/internal/middleware"
+	"github.com/joojf/travel-planner-api/internal/notification"
 	"github.com/joojf/travel-planner-api/internal/trip"
 	"github.com/joojf/travel-planner-api/internal/validator"
 	"github.com/labstack/echo/v4"
@@ -26,14 +27,23 @@ func main() {
 		e.Logger.Fatal(err)
 	}
 
+	emailService := notification.NewEmailService(
+		"smtp.example.com",
+		587,
+		"your-username",
+		"your-password",
+		"noreply@yourapp.com",
+	)
+	notificationService := notification.NewService(emailService)
+
 	authRepo := auth.NewSQLRepository(db)
 	authHandler := auth.NewHandler(authRepo)
 	tripRepo := trip.NewRepository(db)
-	tripHandler := trip.NewHandler(tripRepo)
+	tripHandler := trip.NewHandler(tripRepo, notificationService)
 	activityRepo := activity.NewRepository(db)
 	activityHandler := activity.NewHandler(activityRepo)
 	invitationRepo := invitation.NewRepository(db)
-	invitationHandler := invitation.NewHandler(invitationRepo)
+	invitationHandler := invitation.NewHandler(invitationRepo, notificationService)
 	destinationRepo := destination.NewRepository(db)
 	destinationHandler := destination.NewHandler(destinationRepo)
 	linkRepo := link.NewRepository(db)

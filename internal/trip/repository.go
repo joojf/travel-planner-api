@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"fmt"
 	"time"
+
+	"github.com/joojf/travel-planner-api/internal/auth"
 )
 
 type Repository struct {
@@ -19,6 +21,7 @@ type RepositoryInterface interface {
 	GetByID(id int64) (*Trip, error)
 	Update(trip *Trip) error
 	Delete(id int64) error
+	GetUsersForTrip(tripID int64) ([]auth.User, error)
 }
 
 var _ RepositoryInterface = (*Repository)(nil)
@@ -107,4 +110,31 @@ func (r *Repository) Delete(id int64) error {
 	}
 
 	return nil
+}
+
+func (r *Repository) GetUsersForTrip(tripID int64) ([]auth.User, error) {
+	query := `
+        SELECT u.id, u.email
+        FROM users u
+        JOIN trip_participants tp ON u.id = tp.user_id
+        WHERE tp.trip_id = $1
+    `
+
+	rows, err := r.db.Query(query, tripID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get users for trip: %w", err)
+	}
+	defer rows.Close()
+
+	var users []auth.User
+	for rows.Next() {
+		var user auth.User
+		err := rows.Scan(&user.ID, &user.Email)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan user: %w", err)
+		}
+		users = append(users, user)
+	}
+
+	return users, nil
 }
