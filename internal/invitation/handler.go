@@ -40,11 +40,10 @@ func (h *Handler) CreateInvitation(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
-	// Fetch trip name for the notification message
 	tripDetails, err := h.repo.GetTripByID(tripID)
 	if err != nil {
 		log.Printf("Failed to get trip details: %v", err)
-		tripDetails = &trip.Trip{Name: "Unknown"} // Using trip.Trip, assuming Trip is defined in the trip package
+		tripDetails = &trip.Trip{Name: "Unknown"}
 	}
 
 	message := fmt.Sprintf("You have been invited to join the trip '%s'", tripDetails.Name)

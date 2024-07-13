@@ -6,6 +6,7 @@ import (
 	"github.com/joojf/travel-planner-api/internal/database"
 	"github.com/joojf/travel-planner-api/internal/destination"
 	"github.com/joojf/travel-planner-api/internal/invitation"
+	"github.com/joojf/travel-planner-api/internal/itinerary"
 	"github.com/joojf/travel-planner-api/internal/link"
 	"github.com/joojf/travel-planner-api/internal/middleware"
 	"github.com/joojf/travel-planner-api/internal/notification"
@@ -48,6 +49,8 @@ func main() {
 	destinationHandler := destination.NewHandler(destinationRepo)
 	linkRepo := link.NewRepository(db)
 	linkHandler := link.NewHandler(linkRepo)
+	itineraryRepo := itinerary.NewRepository(db)
+	itineraryHandler := itinerary.NewHandler(itineraryRepo)
 
 	e.POST("/auth/register", authHandler.Register)
 	e.POST("/auth/login", authHandler.Login)
@@ -86,6 +89,13 @@ func main() {
 	linkGroup.GET("", linkHandler.GetLinks)
 	linkGroup.PUT("/:linkId", linkHandler.UpdateLink)
 	linkGroup.DELETE("/:linkId", linkHandler.DeleteLink)
+
+	// Itinerary routes
+	itineraryGroup := e.Group("/trips/:tripId/itineraries", middleware.AuthMiddleware)
+	itineraryGroup.POST("", itineraryHandler.CreateItinerary)
+	itineraryGroup.GET("", itineraryHandler.GetItineraries)
+	itineraryGroup.PUT("/:itineraryId", itineraryHandler.UpdateItinerary)
+	itineraryGroup.DELETE("/:itineraryId", itineraryHandler.DeleteItinerary)
 
 	e.Logger.Fatal(e.Start(":8080"))
 }
