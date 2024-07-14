@@ -5,6 +5,7 @@ import (
 	"github.com/joojf/travel-planner-api/internal/auth"
 	"github.com/joojf/travel-planner-api/internal/database"
 	"github.com/joojf/travel-planner-api/internal/destination"
+	"github.com/joojf/travel-planner-api/internal/expense"
 	"github.com/joojf/travel-planner-api/internal/invitation"
 	"github.com/joojf/travel-planner-api/internal/itinerary"
 	"github.com/joojf/travel-planner-api/internal/link"
@@ -51,6 +52,8 @@ func main() {
 	linkHandler := link.NewHandler(linkRepo)
 	itineraryRepo := itinerary.NewRepository(db)
 	itineraryHandler := itinerary.NewHandler(itineraryRepo)
+	expenseRepo := expense.NewRepository(db)
+	expenseHandler := expense.NewHandler(expenseRepo)
 
 	e.POST("/auth/register", authHandler.Register)
 	e.POST("/auth/login", authHandler.Login)
@@ -96,6 +99,14 @@ func main() {
 	itineraryGroup.GET("", itineraryHandler.GetItineraries)
 	itineraryGroup.PUT("/:itineraryId", itineraryHandler.UpdateItinerary)
 	itineraryGroup.DELETE("/:itineraryId", itineraryHandler.DeleteItinerary)
+
+	// Expense routes
+	expenseGroup := e.Group("/trips/:tripId/expenses", middleware.AuthMiddleware)
+	expenseGroup.POST("", expenseHandler.CreateExpense)
+	expenseGroup.GET("", expenseHandler.GetExpenses)
+	expenseGroup.PUT("/:expenseId", expenseHandler.UpdateExpense)
+	expenseGroup.DELETE("/:expenseId", expenseHandler.DeleteExpense)
+	expenseGroup.GET("/summary", expenseHandler.GetBudgetSummary)
 
 	e.Logger.Fatal(e.Start(":8080"))
 }
