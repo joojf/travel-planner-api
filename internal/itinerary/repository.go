@@ -26,8 +26,8 @@ var _ RepositoryInterface = (*Repository)(nil)
 
 func (r *Repository) Create(itinerary *Itinerary) error {
 	query := `
-        INSERT INTO itineraries (trip_id, title, description, date, created_by, created_at, updated_at)
-        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        INSERT INTO itineraries (trip_id, title, description, place_name, date, created_by, created_at, updated_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
         RETURNING id`
 
 	err := r.db.QueryRow(
@@ -35,6 +35,7 @@ func (r *Repository) Create(itinerary *Itinerary) error {
 		itinerary.TripID,
 		itinerary.Title,
 		itinerary.Description,
+		itinerary.PlaceName,
 		itinerary.Date,
 		itinerary.CreatedBy,
 		time.Now(),
@@ -50,7 +51,7 @@ func (r *Repository) Create(itinerary *Itinerary) error {
 
 func (r *Repository) GetByID(id int64) (*Itinerary, error) {
 	query := `
-        SELECT id, trip_id, title, description, date, created_by, created_at, updated_at
+        SELECT id, trip_id, title, description, place_name, date, created_by, created_at, updated_at
         FROM itineraries
         WHERE id = $1`
 
@@ -60,6 +61,7 @@ func (r *Repository) GetByID(id int64) (*Itinerary, error) {
 		&itinerary.TripID,
 		&itinerary.Title,
 		&itinerary.Description,
+		&itinerary.PlaceName,
 		&itinerary.Date,
 		&itinerary.CreatedBy,
 		&itinerary.CreatedAt,
@@ -78,10 +80,10 @@ func (r *Repository) GetByID(id int64) (*Itinerary, error) {
 
 func (r *Repository) GetByTripID(tripID int64) ([]*Itinerary, error) {
 	query := `
-        SELECT id, trip_id, title, description, date, created_by, created_at, updated_at
-        FROM itineraries
-        WHERE trip_id = $1
-        ORDER BY date ASC`
+		SELECT id, trip_id, title, description, place_name, date, created_by, created_at, updated_at
+		FROM itineraries
+		WHERE trip_id = $1
+		ORDER BY date ASC`
 
 	rows, err := r.db.Query(query, tripID)
 	if err != nil {
@@ -97,6 +99,7 @@ func (r *Repository) GetByTripID(tripID int64) ([]*Itinerary, error) {
 			&itinerary.TripID,
 			&itinerary.Title,
 			&itinerary.Description,
+			&itinerary.PlaceName,
 			&itinerary.Date,
 			&itinerary.CreatedBy,
 			&itinerary.CreatedAt,
@@ -114,13 +117,14 @@ func (r *Repository) GetByTripID(tripID int64) ([]*Itinerary, error) {
 func (r *Repository) Update(itinerary *Itinerary) error {
 	query := `
         UPDATE itineraries
-        SET title = $1, description = $2, date = $3, updated_at = $4
-        WHERE id = $5`
+        SET title = $1, description = $2, place_name = $3, date = $4, updated_at = $5
+        WHERE id = $6`
 
 	_, err := r.db.Exec(
 		query,
 		itinerary.Title,
 		itinerary.Description,
+		itinerary.PlaceName,
 		itinerary.Date,
 		time.Now(),
 		itinerary.ID,

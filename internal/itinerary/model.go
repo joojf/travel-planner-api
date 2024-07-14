@@ -9,6 +9,7 @@ type Itinerary struct {
 	TripID      int64     `json:"trip_id" validate:"required"`
 	Title       string    `json:"title" validate:"required,min=3,max=100"`
 	Description string    `json:"description" validate:"max=500"`
+	PlaceName   string    `json:"place_name" validate:"max=100"`
 	Date        time.Time `json:"date" validate:"required"`
 	CreatedBy   int64     `json:"created_by"`
 	CreatedAt   time.Time `json:"created_at"`
