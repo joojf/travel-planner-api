@@ -29,8 +29,11 @@ func (h *Handler) CreateItinerary(c echo.Context) error {
 	}
 	itinerary.TripID = tripID
 
-	// TODO: Get user ID from authenticated session
-	itinerary.CreatedBy = 1 // Placeholder
+	userID, ok := c.Get("userID").(int64)
+	if !ok {
+		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to get user ID from context")
+	}
+	itinerary.CreatedBy = userID
 
 	if err := h.repo.Create(&itinerary); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())

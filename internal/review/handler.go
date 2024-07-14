@@ -27,8 +27,11 @@ func (h *Handler) CreateReview(c echo.Context) error {
 	}
 	review.TripID = tripID
 
-	// TODO: Get user ID from authenticated session
-	review.UserID = 1 // Placeholder
+	userID, ok := c.Get("userID").(int64)
+	if !ok {
+		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to get user ID from context")
+	}
+	review.UserID = userID
 
 	if err := h.repo.Create(&review); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())

@@ -28,8 +28,11 @@ func (h *Handler) CreateTrip(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
-	// TODO: Get user ID from authenticated session
-	trip.CreatedBy = 1 // Placeholder
+	userID, ok := c.Get("userID").(int64)
+	if !ok {
+		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to get user ID from context")
+	}
+	trip.CreatedBy = userID
 
 	if err := h.repo.Create(&trip); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())

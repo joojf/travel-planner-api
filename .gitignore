@@ -23,3 +23,6 @@ go.work.sum
 
 # Goland IDEA folder
 .idea
+
+# Environment variables
+.env

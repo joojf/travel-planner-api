@@ -7,9 +7,8 @@ import (
 	_ "github.com/lib/pq"
 )
 
-func NewPostgresDB() (*sql.DB, error) {
-	connStr := "user=traveluser dbname=traveldb sslmode=disable password=travelpass host=localhost port=5433"
-	db, err := sql.Open("postgres", connStr)
+func NewPostgresDB(connString string) (*sql.DB, error) {
+	db, err := sql.Open("postgres", connString)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to database: %w", err)
 	}

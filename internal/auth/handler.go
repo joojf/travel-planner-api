@@ -26,12 +26,16 @@ type User struct {
 func (h *Handler) Register(c echo.Context) error {
 	var user User
 	if err := c.Bind(&user); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "Invalid request payload")
+	}
+
+	if err := c.Validate(user); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
 	hashedPassword, err := HashPassword(user.Password)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to hash password")
+		return echo.NewHTTPError(http.StatusInternalServerError, "Internal server error")
 	}
 
 	user.Password = hashedPassword
@@ -42,7 +46,10 @@ func (h *Handler) Register(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to create user")
 	}
 
-	return c.JSON(http.StatusCreated, user)
+	return c.JSON(http.StatusCreated, map[string]interface{}{
+		"id":    user.ID,
+		"email": user.Email,
+	})
 }
 
 func (h *Handler) Login(c echo.Context) error {

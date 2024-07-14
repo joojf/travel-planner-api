@@ -29,8 +29,11 @@ func (h *Handler) CreateExpense(c echo.Context) error {
 	}
 	expense.TripID = tripID
 
-	// TODO: Get user ID from authenticated session
-	expense.CreatedBy = 1 // Placeholder
+	userID, ok := c.Get("userID").(int64)
+	if !ok {
+		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to get user ID from context")
+	}
+	expense.CreatedBy = userID
 
 	if err := h.repo.Create(&expense); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())

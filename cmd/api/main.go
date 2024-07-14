@@ -1,6 +1,9 @@
 package main
 
 import (
+	"log"
+
+	"github.com/joojf/travel-planner-api/config"
 	"github.com/joojf/travel-planner-api/internal/activity"
 	"github.com/joojf/travel-planner-api/internal/auth"
 	"github.com/joojf/travel-planner-api/internal/database"
@@ -15,13 +18,24 @@ import (
 	"github.com/joojf/travel-planner-api/internal/trip"
 	"github.com/joojf/travel-planner-api/internal/validator"
 	"github.com/labstack/echo/v4"
+	echoMiddleware "github.com/labstack/echo/v4/middleware"
 )
 
 func main() {
+	cfg, err := config.LoadConfig()
+	if err != nil {
+		log.Fatalf("Failed to load config: %v", err)
+	}
+
 	e := echo.New()
 	e.Validator = validator.NewCustomValidator()
 
-	db, err := database.NewPostgresDB()
+	// Middleware
+	e.Use(echoMiddleware.Logger())
+	e.Use(echoMiddleware.Recover())
+	e.Use(echoMiddleware.CORS())
+
+	db, err := database.NewPostgresDB(cfg.DatabaseURL)
 	if err != nil {
 		e.Logger.Fatal(err)
 	}
@@ -30,12 +44,14 @@ func main() {
 		e.Logger.Fatal(err)
 	}
 
+	auth.InitJWT(cfg)
+
 	emailService := notification.NewEmailService(
-		"smtp.example.com",
-		587,
-		"your-username",
-		"your-password",
-		"noreply@yourapp.com",
+		cfg.SMTPHost,
+		cfg.SMTPPort,
+		cfg.SMTPUsername,
+		cfg.SMTPPassword,
+		cfg.SMTPFromEmail,
 	)
 	notificationService := notification.NewService(emailService)
 
@@ -118,5 +134,5 @@ func main() {
 	reviewGroup.PUT("/:reviewId", reviewHandler.UpdateReview)
 	reviewGroup.DELETE("/:reviewId", reviewHandler.DeleteReview)
 
-	e.Logger.Fatal(e.Start(":8080"))
+	e.Logger.Fatal(e.StartTLS(":8080", "cert.pem", "key.pem"))
 }

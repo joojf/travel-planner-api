@@ -5,9 +5,14 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
+	"github.com/joojf/travel-planner-api/config"
 )
 
-var jwtSecret = []byte("your-secret-key") // TODO: Use an environment variable
+var jwtSecret []byte
+
+func InitJWT(config *config.Config) {
+	jwtSecret = []byte(config.JWTSecret)
+}
 
 func GenerateToken(userID int64) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
