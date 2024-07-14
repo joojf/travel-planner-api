@@ -4,15 +4,22 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/joojf/travel-planner-api/internal/notification"
 	"github.com/labstack/echo/v4"
 )
 
 type Handler struct {
-	repo Repository
+	repo                Repository
+	tokenBlacklist      map[string]time.Time
+	notificationService *notification.Service
 }
 
-func NewHandler(repo Repository) *Handler {
-	return &Handler{repo: repo}
+func NewHandler(repo Repository, notificationService *notification.Service) *Handler {
+	return &Handler{
+		repo:                repo,
+		tokenBlacklist:      make(map[string]time.Time),
+		notificationService: notificationService,
+	}
 }
 
 type User struct {
@@ -76,7 +83,6 @@ func (h *Handler) Login(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusUnauthorized, "Invalid credentials")
 	}
 
-	// Generate JWT token here
 	token, err := GenerateToken(user.ID)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to generate token")
@@ -88,11 +94,74 @@ func (h *Handler) Login(c echo.Context) error {
 }
 
 func (h *Handler) Logout(c echo.Context) error {
-	// Implement user logout
-	return c.String(http.StatusOK, "Logout endpoint")
+	token := c.Request().Header.Get("Authorization")
+	if token == "" {
+		return echo.NewHTTPError(http.StatusBadRequest, "No token provided")
+	}
+
+	h.tokenBlacklist[token] = time.Now().Add(24 * time.Hour)
+
+	return c.NoContent(http.StatusOK)
 }
 
 func (h *Handler) ResetPassword(c echo.Context) error {
-	// Implement password reset
-	return c.String(http.StatusOK, "Reset password endpoint")
+	var resetRequest struct {
+		Email string `json:"email"`
+	}
+
+	if err := c.Bind(&resetRequest); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+
+	user, err := h.repo.GetUserByEmail(resetRequest.Email)
+	if err != nil {
+		return c.NoContent(http.StatusOK)
+	}
+
+	resetToken, err := GenerateResetToken(user.ID)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to generate reset token")
+	}
+
+	resetLink := "http://localhost:5000/reset-password?token=" + resetToken
+	message := "Click the following link to reset your password: " + resetLink
+	err = h.notificationService.SendNotification(user.Email, "Password Reset", message)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to send reset email")
+	}
+
+	return c.NoContent(http.StatusOK)
+}
+
+func (h *Handler) SetNewPassword(c echo.Context) error {
+	var setPasswordRequest struct {
+		Token       string `json:"token"`
+		NewPassword string `json:"new_password"`
+	}
+
+	if err := c.Bind(&setPasswordRequest); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+
+	userID, err := ValidateResetToken(setPasswordRequest.Token)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusUnauthorized, "Invalid or expired reset token")
+	}
+
+	hashedPassword, err := HashPassword(setPasswordRequest.NewPassword)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to hash password")
+	}
+
+	user, err := h.repo.GetUserByID(userID)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to get user")
+	}
+
+	user.Password = hashedPassword
+	if err := h.repo.UpdateUser(user); err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to update password")
+	}
+
+	return c.NoContent(http.StatusOK)
 }

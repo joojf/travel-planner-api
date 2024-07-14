@@ -56,7 +56,7 @@ func main() {
 	notificationService := notification.NewService(emailService)
 
 	authRepo := auth.NewSQLRepository(db)
-	authHandler := auth.NewHandler(authRepo)
+	authHandler := auth.NewHandler(authRepo, notificationService)
 	tripRepo := trip.NewRepository(db)
 	tripHandler := trip.NewHandler(tripRepo, notificationService)
 	activityRepo := activity.NewRepository(db)
@@ -77,6 +77,7 @@ func main() {
 	e.POST("/auth/register", authHandler.Register)
 	e.POST("/auth/login", authHandler.Login)
 	e.POST("/auth/reset-password", authHandler.ResetPassword)
+	e.POST("/auth/set-new-password", authHandler.SetNewPassword)
 
 	// Trip routes
 	tripGroup := e.Group("/trips", middleware.AuthMiddleware)
