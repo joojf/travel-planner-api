@@ -11,6 +11,7 @@ import (
 	"github.com/joojf/travel-planner-api/internal/link"
 	"github.com/joojf/travel-planner-api/internal/middleware"
 	"github.com/joojf/travel-planner-api/internal/notification"
+	"github.com/joojf/travel-planner-api/internal/review"
 	"github.com/joojf/travel-planner-api/internal/trip"
 	"github.com/joojf/travel-planner-api/internal/validator"
 	"github.com/labstack/echo/v4"
@@ -54,6 +55,8 @@ func main() {
 	itineraryHandler := itinerary.NewHandler(itineraryRepo)
 	expenseRepo := expense.NewRepository(db)
 	expenseHandler := expense.NewHandler(expenseRepo)
+	reviewRepo := review.NewRepository(db)
+	reviewHandler := review.NewHandler(reviewRepo)
 
 	e.POST("/auth/register", authHandler.Register)
 	e.POST("/auth/login", authHandler.Login)
@@ -107,6 +110,13 @@ func main() {
 	expenseGroup.PUT("/:expenseId", expenseHandler.UpdateExpense)
 	expenseGroup.DELETE("/:expenseId", expenseHandler.DeleteExpense)
 	expenseGroup.GET("/summary", expenseHandler.GetBudgetSummary)
+
+	// Review routes
+	reviewGroup := e.Group("/trips/:tripId/reviews", middleware.AuthMiddleware)
+	reviewGroup.POST("", reviewHandler.CreateReview)
+	reviewGroup.GET("", reviewHandler.GetReviews)
+	reviewGroup.PUT("/:reviewId", reviewHandler.UpdateReview)
+	reviewGroup.DELETE("/:reviewId", reviewHandler.DeleteReview)
 
 	e.Logger.Fatal(e.Start(":8080"))
 }
